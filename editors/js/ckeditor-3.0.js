@@ -124,7 +124,7 @@ Drupal.wysiwyg.editor.attach.ckeditor = function(context, params, settings) {
           // Convert raw data for display in WYSIWYG mode.
           return function(data, fixForBody) {
             for (var plugin in enabledPlugins) {
-              if (typeof Drupal.wysiwyg.plugins[plugin].attach == 'function') {
+              if (Drupal.wysiwyg.plugins[plugin] && typeof Drupal.wysiwyg.plugins[plugin].attach == 'function') {
                 data = Drupal.wysiwyg.plugins[plugin].attach(data, wysiwygInstance.pluginInfo.global.drupal[plugin], editor.name);
                 data = wysiwygInstance.prepareContent(data);
               }
@@ -137,7 +137,7 @@ Drupal.wysiwyg.editor.attach.ckeditor = function(context, params, settings) {
           return function(data, fixForBody) {
             data = originalToDataFormat.call(this, data, fixForBody);
             for (var plugin in enabledPlugins) {
-              if (typeof Drupal.wysiwyg.plugins[plugin].detach == 'function') {
+              if (Drupal.wysiwyg.plugins[plugin] && typeof Drupal.wysiwyg.plugins[plugin].detach == 'function') {
                 data = Drupal.wysiwyg.plugins[plugin].detach(data, wysiwygInstance.pluginInfo.global.drupal[plugin], editor.name);
               }
             }
@@ -152,7 +152,7 @@ Drupal.wysiwyg.editor.attach.ckeditor = function(context, params, settings) {
       var enabledPlugins = wysiwygInstance.pluginInfo.instances.drupal;
       for (var name in enabledPlugins) {
         var plugin = Drupal.wysiwyg.plugins[name];
-        if ($.isFunction(plugin.isNode)) {
+        if (plugin && $.isFunction(plugin.isNode)) {
           var node = event.data.selection.getSelectedElement();
           var state = plugin.isNode(node ? node.$ : null) ? CKEDITOR.TRISTATE_ON : CKEDITOR.TRISTATE_OFF;
           event.editor.getCommand(name).setState(state);
