@@ -224,6 +224,75 @@ Drupal.behaviors.attachWysiwyg = {
 };
 
 /**
+ * Angular -Attach editors to input formats and target elements (f.e. textarea).
+ * Bind the editor as angular directive.
+ *
+ */
+Drupal.behaviors.attachWysiwygAngular = {
+  attach: function (context, settings) {
+    // This breaks in Konqueror. Prevent it from running.
+    if (/KDE/.test(navigator.vendor)) {
+      return;
+    }
+    var wysiwygs = $('.wysiwyg-angular:input', context);
+
+    if (!wysiwygs.length) {
+      // No new fields, nothing to update.
+      return;
+    }
+    updateInternalState(settings.osNodeFormWysiwyg, context);
+    wysiwygs.once('wysiwyg-angular', function () {
+
+      // Skip processing if the element is unknown or does not exist in this
+      // document. Can happen after a form was removed but Drupal.ajax keeps a
+      // lingering reference to the form and calls Drupal.attachBehaviors().
+      var $this = $('#' + this.id, document);
+      if (!$this.length) {
+        return;
+      }
+      // Directly attach this editor, if the input format is enabled or there is
+      // only one input format at all.
+      Drupal.wysiwygAttach(context, this.id);
+    })
+    .closest('form').submit(function (event) {
+      // Detach any editor when the containing form is submitted.
+      // Do not detach if the event was cancelled.
+      if (event.isDefaultPrevented()) {
+        return;
+      }
+      var form = this;
+      $('.wysiwyg-angular:input', this).each(function () {
+        Drupal.wysiwygDetach(form, this.id, 'serialize');
+      });
+    });
+  },
+
+  detach: function (context, settings, trigger) {
+    var wysiwygs;
+    // The 'serialize' trigger indicates that we should simply update the
+    // underlying element with the new text, without destroying the editor.
+    if (trigger == 'serialize') {
+      // Removing the wysiwyg-processed class guarantees that the editor will
+      // be reattached. Only do this if we're planning to destroy the editor.
+      wysiwygs = $('.wysiwyg-angular-processed:input', context);
+    }
+    else {
+      wysiwygs = $('.wysiwyg-angular:input', context).removeOnce('wysiwyg-angular');
+    }
+    wysiwygs.each(function () {
+      Drupal.wysiwygDetach(context, this.id, trigger);
+      if (trigger === 'unload') {
+        // Delete the instance in case the field is removed. This is safe since
+        // detaching with the unload trigger is reverts to the 'none' "editor".
+        delete _internalInstances[this.id];
+        delete Drupal.wysiwyg.instances[this.id];
+      }
+    });
+  }
+};
+
+
+/**
  * Attach an editor to a target element.
  *
  * Detaches any existing instance for the field before attaching a new instance
